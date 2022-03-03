@@ -3,4 +3,4 @@
 Program for translate XML files, be create in the work on the game Legend of Hero: Trails of the Cold Steel
 
 ВАЖНО!!!
-Перед использовнанием необхадиом распаковать файл со словарем!
+Перед использовнанием необхадимо распаковать файл со словарем!
