@@ -1,3 +1,4 @@
+
 #include <WindowsConstants.au3>
 #include <GUIConstantsEx.au3>
 #include <StaticConstants.au3>
@@ -10,6 +11,8 @@
 #Include <EditConstants.au3>
 #include <ButtonConstants.au3>
 #include <Date.au3>
+#include <WinAPI.au3>
+#include <Excel.au3>
 
 Localize()
 
@@ -127,7 +130,7 @@ While 1
 				Sleep(1)
 		EndSwitch
 	Case $iOpenQuick
-		Global $iFileName = FileOpenDialog ($tSelFile, @ScriptDir, 'XML ' & $tFiles & ' (*.xml)')
+		Global $iFileName = FileOpenDialog ($tSelFile, @ScriptDir, 'XLSX ' & $tFiles & ' (*.xlsx)')
 			If @error = 1 then ContinueLoop
 			OpenOrResume()
 	Case $idButton1, $idButton1a
@@ -147,7 +150,7 @@ While 1
 						EndIf
 				EndIf
 	Case $idButtonBackup
-			BackUper(@ScriptDir & '\' & $iName & '_translate.xml')
+			BackUper(@ScriptDir & '\' & $iName & '_translate.xlsx')
 	Case $idButtonReturnOrig
 			GUICtrlSetData($iTranslate, GUICtrlRead($iOriginal))
 	Case $idButtonDic
@@ -155,7 +158,6 @@ While 1
 	Case $idButtonYT
 		$Text2TL =  GUICtrlRead($iOriginal)
 			If StringInStr($Text2TL, '#') > 0 then $Text2TL = StringReplace ($Text2TL, '#', ' ')
-			If StringInStr($Text2TL, '•••') > 0 then $Text2TL = StringReplace ($Text2TL, ' ••• ', ' ')
 			If GUICtrlRead ($iTranslateSelect) = "Yandex" Then
 				ShellExecute ("https://translate.yandex.ru/?utm_source=main_stripe_big&lang=en-ru&text=" & $Text2TL)
 			ElseIf GUICtrlRead ($iTranslateSelect) = "Google" Then
@@ -169,199 +171,41 @@ While 1
 WEnd
 
 Func Open1()
-	Global $iFileName = FileOpenDialog ($tSelFile, @ScriptDir, 'XML ' & $tFiles & ' (*.xml)')
+	Global $iFileName = FileOpenDialog ($tSelFile, @ScriptDir, 'XLSX ' & $tFiles & ' (*.xlsx)')
 		If @error = 0 then
 			OpenOrResume()
 		EndIf
 EndFunc
 
 Func OpenOrResume() ;Открывает новый файл или продолжает старый
-	$iCountLines = _FileCountLines($iFileName)
-	_PathSplit($iFileName, $iDrive, $iDir, $iName, $iExp)
-	GUICtrlCreateLabel ($tNowOpen & $iName & $iExp, 155, 270, 130, 20)
-	
-	If FileExists (@ScriptDir & '\' & $iName & '_translate.xml') Then
-		If _FileCountLines(@ScriptDir & '\' & $iName & '_translate.xml') = $iCountLines Then
-			$Ans = MsgBox(4, $tMsg, $tMsg2 & @CRLF & $tExit & '?')
-				If $Ans = 6 Then Exit
-		Else
-			BackUper(@ScriptDir & '\' & $iName & '_translate.xml')
-			_FileDeleteEmptyLines(@ScriptDir & '\' & $iName & '_translate.xml')
-			$iResultFile = FileOpen (@ScriptDir & '\' & $iName & '_translate.xml', 1)
-			$a = Round((_FileCountLines(@ScriptDir & '\' & $iName & '_translate.xml')-6)/2)
-			$b = Round((_FileCountLines($iFileName)-4)/2)
-			$c = _FileCountLines(@ScriptDir & '\' & $iName & '_translate.xml') + 1
-			$iStartReading  = FileOpen($iFileName)
-			FileWriteLine ($iResultFile, @CRLF)
-			GUICtrlSetData ($iProgressMeter, $a & '/' & $b - 3 & ' ' & $tComplete)
-			
-				GetText()
-		EndIf
-	Else
-		FileCopy ($iFileName, $iDrive & $iDir & '\' & $iName & '_original.xml')
-		FileOpen ($iFileName, 0)
-		$iDataMain = FileRead ($iFileName)
-		$iNewText = StringRegExpReplace ($iDataMain, '</Entry>\R      <Entry data="AQ==" />\R      <Entry>', ' ••• ')
-		FileClose ($iFileName)
-		FileOpen ($iFileName, 2)
-		FileWrite ($iFileName, $iNewText)
-		FileClose ($iFileName)
-		FileOpen ($iFileName, 0)
-		$iCountLines = _FileCountLines($iFileName)
-		$a = 1
-		$b = Round((_FileCountLines($iFileName)-4)/2)
-		$c = 7
-		GUICtrlSetData ($iProgressMeter, $a & ' из ' & $b - 3 & ' ' & $tComplete)
-		$iStartReading  = FileOpen($iFileName)
-		$iResultFile = FileOpen (@ScriptDir & '\' & $iName & '_translate.xml', 2)
-		
-			For $i = 1 to 6
-				$iString = FileReadLine ($iStartReading, $i)
-				FileWriteLine ($iResultFile, $iString)
-			Next
-		
-				GetText()
-	EndIf
+	$table = _Excel_BookOpenText(_Excel_Open(0), $iFileName)
+	_ArrayDisplay($table)
 EndFunc
 
 Func NextString() ;Переходит на следующую строку 
-		$iString = Orpho(GUICtrlRead ($iTranslate))
 
-		$c += 1
-		
-		FileWriteLine ($iResultFile, '      <Entry>' & $iString & '</Entry>')
-		Sleep (100)
-		$iStartReading  = FileOpen($iFileName)
-		$iString = FileReadLine ($iStartReading, $c)
-		FileWriteLine ($iResultFile, $iString)
-		
-			If $c >= $b * 2 Then
-				MsgBox(0, $tMsg, $tMsg3)
-				$iFinish = FileRead ($iStartReading)
-				FileWrite ($iResultFile, $iFinish)
-				FileSetPos ($iResultFile, 0, 0)
-				$iDataMain = FileRead ($iResultFile)
-				$iNewText = StringRegExpReplace ($iDataMain, '•••', '</Entry>' &  @CRLF & '      <Entry data="AQ==" />' &  @CRLF & '      <Entry>')
-				FileClose ($iResultFile)
-				$iResultFile = FileOpen (@ScriptDir & '\' & $iName & '_translate.xml', 2)
-				FileWrite ($iResultFile, $iNewText)
-				FileClose ($iResultFile)
-				;FileDelete (@ScriptDir & "\data\translator.ini")
-				Exit
-			EndIf
-			
-		$c += 1
-		$a += 1
-
-			GetText()
 EndFunc
 
 Func LetsGo() ;Пропускает указанное количество строк
-	$iLetsGo = InputBox ($tGo2Str, $tStrN, $c + 1, '', 250, 130)
-	
-	If @error = 1 then Return
-	If Mod($iLetsGo, 2) = 0 Then $iLetsGo=$iLetsGo+1
-	
-		If $iLetsGo > $c Then
-			$iStartReading  = FileOpen($iFileName)
-			$c += 1
-			$iString = GUICtrlRead ($iTranslate)
-			FileWriteLine ($iResultFile, '      <Entry>' & $iString & '</Entry>')
-			ProgressOn('', $tWait, "")
-			$o = 0
-			
-				For $i = $c to $iLetsGo - 1
-					$iString = FileReadLine ($iStartReading, $i)
-					FileWriteLine ($iResultFile, $iString)
-					ProgressSet((100/($iLetsGo - $i)) * $o)
-					$o += 1
-				Next
-				
-			ProgressSet(100, $tDone)
-			ProgressOff()
-			$a = Round((($iLetsGo - $c)/2) + $a)
-			$c = $iLetsGo
-			
-				GetText()
-		Else
-			MsgBox (0, $tMsg, $tMsg4 & @CRLF & $tMsg5)
-		EndIf
-		
+
 EndFunc
 
 Func ComeBack() ;Возвращается на строку назад
-	FileClose ($iResultFile)
-	
-	For $ooo = 1 to 2
-		_FileWriteToLine ( @ScriptDir & '\' & $iName & '_translate.xml', _FileCountLines(@ScriptDir & '\' & $iName & '_translate.xml'), '', 1)
-	Next
-	
-	$c = $c - 2
-	
-	If Mod($c, 2) = 0 Then 
-		$c -= 1
-		_FileWriteToLine ( @ScriptDir & '\' & $iName & '_translate.xml', _FileCountLines(@ScriptDir & '\' & $iName & '_translate.xml'), '', 1)
-	EndIf
-	
-	$iStartReading  = FileOpen($iFileName)	
-	$iResultFile = FileOpen (@ScriptDir & '\' & $iName & '_translate.xml', 1)
-	GetText()
+
 EndFunc
 
 Func FindAndReplace($iFind, $iReplace) ;Ищет и заменяет текст во всем файле
 
-	FileClose ($iFileName)
-	FileOpen ($iFileName, 0)
-	
-	Local $iArray[3] = [' ', '>', '*'], $iArray1[8] = [' ', '<', ',', '.', '!', '?', ':', '*'], $iCR = 0
-	
-	ProgressOn('', $tWait, "")
-	$set = 0
-	
-	For $t = 0 to 2
-	
-		For $u = 0 to 7
-			$iDataMain = FileRead ($iFileName)
-			$iNewText = StringReplace ($iDataMain, $iArray[$t] & $iFind & $iArray1[$u], $iArray[$t] & $iReplace & $iArray1[$u])
-			$iCR = @extended + $iCR
-			FileClose ($iFileName)
-			FileOpen ($iFileName, 2)
-			FileWrite ($iFileName, $iNewText)
-			FileClose ($iFileName)
-			FileOpen ($iFileName, 0)
-			ProgressSet(2 * ($u + 1) + $set)
-		Next
-		
-	$set = 50
-	Next
-	
-	ProgressSet(100, $tDone)
-	ProgressOff()
-	
-	MsgBox (0, $tMsg, $tCompleted & $iCR & $tReplace)
-	
-	GUICtrlSetData($iTranslate, $iReplace)
-
 EndFunc
 
 Func GetText() ;Читает строку из файла, устанавливает данные для счетчиков
-	$iSatrtText = StringTrimRight(StringTrimLeft(FileReadLine ($iStartReading, $c), 13), 8)
-	$x = StringLen ($iSatrtText)
-	GUICtrlSetData ($iProgressMeter, $a & '/' & $b - 3 & ' ' & $tComplete)
-	GUICtrlSetData ($iLeterMeter, $x & ' ' & $tSymbols)
-	GUICtrlSetData ($iStringMeter, $tString & ' ' & $c & '/' & $iCountLines)
-	GUICtrlSetData ($iProgressBar, ((100/$iCountLines) * $c))
-	GUICtrlSetData ($iProgressData, StringLeft(((100/$iCountLines) * $c), 5) & " %")
-	GUICtrlSetData($iOriginal, $iSatrtText)
-	GUICtrlSetData($iTranslate, $iSatrtText)
-	GUICtrlSetLimit ($iTranslate, $x)
-	FileClose ($iStartReading)
+
 EndFunc
 
 Func Orpho ($iOrpho) ;Проверяет орфографию слов в переводе
 	$iStringArray = StringSplit ($iOrpho, ' .,!?;:-"()•*\[]()_' & "'")
 	
-	For $i = 1 to UBound($iStringArray)-1
+	For $i = 1 to UBound($iStringArray) - 1
 	;Определяем имя тома словаря
 		
 		If StringInStr($iStringArray[$i], 'n') = 1 Then $iStringArray[$i] = StringReplace ($iStringArray[$i], 'n', '')
@@ -428,22 +272,15 @@ Func FindWords($iWord) ;Предлагает добавить слово в сл
 	Return($iWord)
 EndFunc
 
-Func _FileDeleteEmptyLines($sFile) ;Удаляет пустые строки в файле
-    $sFileContent = StringRegExpReplace(FileRead($sFile), "(\r?\n){1,}", "\1")
-    $hFOpen = FileOpen($sFile, 2)
-    FileWrite($hFOpen, StringStripWS($sFileContent, 3))
-    FileClose($hFOpen)
-EndFunc
-
 Func BackUper($File20) ;Создает резервные копии переводов
 	Local $iDr20, $iDi20, $iN20, $iE20
 	_PathSplit($File20, $iDr20, $iDi20, $iN20, $iE20)
 	$i = 0	
 		Do
 			$i += 1
-		Until Not FileExists (@scriptdir & "\data\backup\" & $iN20 & "_bak_" & $i & ".xml")
+		Until Not FileExists (@scriptdir & "\data\backup\" & $iN20 & "_bak_" & $i & ".xlsx")
 
-	FileCopy ($File20, @scriptdir & "\data\backup\" & $iN20 & "_bak_" & $i & ".xml", 8)
+	FileCopy ($File20, @scriptdir & "\data\backup\" & $iN20 & "_bak_" & $i & ".xlsx", 8)
 EndFunc
 
 Func DictCreater()
@@ -520,8 +357,8 @@ Next
 Global $AGUI = GUICreate($tSetting, 140, 180, -1, -1)
 	GUISetState(@SW_SHOW, $AGUI)
 	GUISetIcon (@ScriptDir & "\Data\icon\setting.ico")
-	; $iLangList = IniRead('data\translator.ini', 'Local', 'LangList', 'english|russian')
-	; $iDictList = IniRead('data\translator.ini', 'Local', 'DictList', 'english|russian')
+	$iLangList = IniRead('data\translator.ini', 'Local', 'LangList', 'english|russian')
+	$iDictList = IniRead('data\translator.ini', 'Local', 'DictList', 'english|russian')
 
 GUICtrlCreateLabel($tLanguage, 10, 5, 100, 14)
 Global $iLang = GUICtrlCreateCombo("", 10, 20, 120, 100)
