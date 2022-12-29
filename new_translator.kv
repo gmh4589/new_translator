@@ -22,6 +22,12 @@
                 size_hint_max_y: 50
                 on_press: root.fileOpen()
             Button:
+                id: saveBTN
+                background_normal: './data/icon/save.png'
+                size_hint_max_x: 50
+                size_hint_max_y: 50
+				on_release: root.writeFile()
+            Button:
                 id: backBTN
                 background_normal: './data/icon/left_arrow.png'
                 size_hint_max_x: 50
@@ -34,29 +40,12 @@
                 size_hint_max_y: 50
 		        on_press: root.nextString()
             Button:
-                id: gotoBTN
-                background_normal: './data/icon/goto.png'
-                size_hint_max_x: 50
-                size_hint_max_y: 50
-				on_release: Factory.GotoPopup().open()
-            Button:
                 id: returnBTN
                 background_normal: './data/icon/refresh.png'
                 size_hint_max_x: 50
                 size_hint_max_y: 50
                 on_press: root.reFresh()
-            Button:
-                id: findBTN
-                background_normal: './data/icon/find.png'
-                size_hint_max_x: 50
-                size_hint_max_y: 50
-				on_release: Factory.FindReplace().open()
-            Button:
-                id: backupBTN
-                background_normal: './data/icon/copy.png'
-                size_hint_max_x: 50
-                size_hint_max_y: 50
-				on_release: Factory.EOFPopup().open()
+			
             Button:
                 id: tlBtn
                 background_normal: './data/icon/translate.png'
@@ -69,17 +58,7 @@
                 size_hint_max_x: 50
                 size_hint_max_y: 50
 				on_release: Factory.SettingPopup().open()
-            Button:
-                id: dictBTN
-                background_normal: './data/icon/book.png'
-                size_hint_max_x: 50
-                size_hint_max_y: 50
-            Button:
-                id: exitBTN
-                background_normal: './data/icon/off.png'
-                size_hint_max_x: 50
-                size_hint_max_y: 50
-                on_press: quit()
+
         BoxLayout:
             id: textBox
             size_hint: (1, .7)
@@ -112,10 +91,14 @@
 		                id: fBTN
 		                text: 'ДАЛЬШЕ'
 		                on_press: root.nextString()
-		            Button:
-		                id: gtBTN
-		                text: 'ПЕРЕЙТИ К...'
-				        on_release: Factory.GotoPopup().open()
+		            BoxLayout:
+		                orientation: 'vertical'
+		                CodeInput:
+		                    id: gtInput
+                        Button:
+                            id: gtBTN
+                            text: 'ПЕРЕЙТИ К...'
+                            on_release: Factory.GotoPopup().open()
 		        BoxLayout:
 		            size_hint: (.25, 1)
 		            Label:
@@ -140,16 +123,13 @@
     BoxLayout:
         orientation: 'vertical'
         Label:
-            text: "Записать перевод?"
+            text: "Конец файла!\nСохраните перевод!"
         BoxLayout:
             orientation: 'horizontal'
             spacing: 10
             padding: 10
             Button:
                 text: 'OK'
-                on_release: root.dismiss()
-            Button:
-                text: 'ОТМЕНА'
                 on_release: root.dismiss()
 
 <FindReplace@Popup>:
@@ -202,3 +182,15 @@
             Button:
                 text: 'Перейти'
                 on_release: root.dismiss()
+
+<SavedPopup@Popup>:
+    auto_dismiss: False
+    title: 'Настройки'
+    size_hint: None, None
+    size: 200, 200
+    Button:
+        text: 'Сохранено!'
+        background_normal: ''
+        background_down: ''
+        background_color: .21, .56, .18, 1
+        on_release: root.dismiss()
