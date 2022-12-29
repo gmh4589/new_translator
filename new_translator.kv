@@ -45,19 +45,35 @@
                 size_hint_max_x: 50
                 size_hint_max_y: 50
                 on_press: root.reFresh()
-			
-            Button:
-                id: tlBtn
-                background_normal: './data/icon/translate.png'
-                size_hint_max_x: 50
-                size_hint_max_y: 50
+
+            ##Button:
+            ##    id: tlBtn
+            ##    background_normal: './data/icon/translate.png'
+            ##    size_hint_max_x: 50
+            ##    size_hint_max_y: 50
+
+            ##Button:
+            ##    id: settingBTN
+            ##    background_normal: './data/icon/setting.png'
+            ##    size_hint_max_x: 50
+            ##    size_hint_max_y: 50
+			##    on_release: Factory.SettingPopup().open()
+
+			Label:
+                text: 'Найти:'
+            TextInput:
+                id: text4find
+			Label:
+                text: 'Заменить:'
+            TextInput:
+                id: text4replace
 
             Button:
-                id: settingBTN
-                background_normal: './data/icon/setting.png'
+                id: returnBTN
+                background_normal: './data/icon/find.png'
                 size_hint_max_x: 50
                 size_hint_max_y: 50
-				on_release: Factory.SettingPopup().open()
+                on_press: root.findBTN()
 
         BoxLayout:
             id: textBox
@@ -106,15 +122,6 @@
 		                font_size: 25
 		                text: '0 %'
 
-<SettingPopup@Popup>:
-    auto_dismiss: False
-    title: 'Настройки'
-    size_hint: None, None
-    size: 400, 400
-    Button:
-        text: 'Close me!'
-        on_release: root.dismiss()
-
 <EOFPopup@Popup>:
     auto_dismiss: False
     title: 'Предупреждение'
@@ -130,57 +137,6 @@
             padding: 10
             Button:
                 text: 'OK'
-                on_release: root.dismiss()
-
-<FindReplace@Popup>:
-    auto_dismiss: False
-    title: 'Поиск и замена'
-    size_hint: None, None
-    size: 400, 300
-    BoxLayout:
-        orientation: 'vertical'
-        spacing: 20
-        padding: 20
-        Label:
-            size_hint: 1, .1
-            text: 'Найти'
-        TextInput:
-            id: text4find
-        Label:
-            size_hint: 1, .1
-            text: 'Заменить'
-        TextInput:
-            id: text4replace
-        BoxLayout:
-            spacing: 10
-            Button:
-                text: 'Отмена'
-                on_release: root.dismiss()
-            Button:
-                text: 'Найти и заменить'
-                on_release: root.dismiss()
-
-<GotoPopup@Popup>:
-    auto_dismiss: False
-    title: 'Перейти к...'
-    size_hint: None, None
-    size: 200, 200
-    BoxLayout:
-        orientation: 'vertical'
-        spacing: 20
-        padding: 5
-        Label:
-            size_hint: 1, .1
-            text: 'Номер ячейки'
-        TextInput:
-            id: cellIndex
-        BoxLayout:
-            spacing: 10
-            Button:
-                text: 'Отмена'
-                on_release: root.dismiss()
-            Button:
-                text: 'Перейти'
                 on_release: root.dismiss()
 
 <SavedPopup@Popup>:

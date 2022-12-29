@@ -99,6 +99,8 @@ class MainScreen(Screen):
     def reFresh(self):
         self.ids['newTXT'].text = self.ids['originalTXT'].text
 
+    def findBTN(self): pass
+
 class NewTranslatorApp(App):
 
     # Создаёт  интерфейс
