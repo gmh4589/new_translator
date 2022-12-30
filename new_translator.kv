@@ -61,10 +61,12 @@
 
 			Label:
                 text: 'Найти:'
+                size_hint: .3, 1
             TextInput:
                 id: text4find
 			Label:
                 text: 'Заменить:'
+                size_hint: .5, 1
             TextInput:
                 id: text4replace
 
@@ -110,11 +112,11 @@
 		            BoxLayout:
 		                orientation: 'vertical'
 		                CodeInput:
-		                    id: gtInput
+		                    id: gotoInput
                         Button:
-                            id: gtBTN
+                            id: gotoBTN
                             text: 'ПЕРЕЙТИ К...'
-                            on_release: Factory.GotoPopup().open()
+		                    on_press: root.gotoBTN()
 		        BoxLayout:
 		            size_hint: (.25, 1)
 		            Label:

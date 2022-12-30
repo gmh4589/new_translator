@@ -1,10 +1,13 @@
 # -*- coding:utf-8 -*-
+
 from kivy.app import App
 from kivy.factory import Factory
 from kivy.lang import Builder
-from kivy.uix.popup import Popup
+from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
+
 from tkinter import filedialog as fd
+from tkinter import messagebox as mb
 
 import openpyxl
 
@@ -23,6 +26,8 @@ class MainScreen(Screen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        Clock.schedule_interval(self.update, .1)
+        Clock.schedule_interval(self.autoSave, 60)
 
     def fileOpen(self):
 
@@ -52,23 +57,23 @@ class MainScreen(Screen):
                         val = [self.sheet.cell(row = row + 1, column = col).value, '', row + 1, col]
                         self.values.append(val)
 
+            self.upd()
+
             print(self.values)
 
-            self.ids['originalTXT'].text = str(self.values[0][0])
-            self.ids['newTXT'].text = str(self.values[0][0])
-            self.ids['rdyLabel'].text = '1/' + str(len(self.values)) + ' готово'
-            self.ids['longLabel'].text = str(len(self.values[0][0])) + ' символов'
-            self.ids['percentLabel'].text = str((100 / len(self.values) * sss + 1))[:4] + ' %'
-
-    def writeFile(self):
+    def writeFile(self, auto = 0):
 
         for cell in range(len(self.values)):
+            o = 1 if self.values[cell][1] != '' else 0
             self.sheet.cell(row = int(self.values[cell][2]),
                             column = int(self.values[cell][3])).value\
-                = self.values[cell][1]
+                = self.values[cell][o]
 
         self.readData.save(self.filename)
-        Factory.SavedPopup().open()
+        if auto == 0: Factory.SavedPopup().open()
+        else: print('Автосохренение выполнено!')
+
+    def autoSave(self, dt): self.writeFile(1)
 
     def nextString(self, step = '+'):
 
@@ -84,22 +89,54 @@ class MainScreen(Screen):
             elif step == '-':
                 if sss != 0: sss -= 1
                 else: Factory.EOFPopup().open()
+            else: sss = step
 
-            #print(self.values)
+            o = 1 if self.values[sss][1] != '' else 0
+            self.ids['newTXT'].text = str(self.values[sss][o])
 
+        except IndexError: Factory.EOFPopup().open()
+        print(self.values)
+
+    def update(self, dt):
+        try:
             self.ids['originalTXT'].text = str(self.values[sss][0])
-            if str(self.values[sss][1]) == '': self.ids['newTXT'].text = str(self.values[sss][0])
-            else: self.ids['newTXT'].text = str(self.values[sss][1])
             self.ids['rdyLabel'].text = str(sss + 1) + '/' + str(len(self.values)) + ' готово'
             self.ids['longLabel'].text = str(len(self.values[sss][0])) + ' символов'
             self.ids['percentLabel'].text = str((100 / len(self.values) * sss))[:4] + ' %'
 
-        except IndexError: Factory.EOFPopup().open()
+        except IndexError: pass
 
     def reFresh(self):
         self.ids['newTXT'].text = self.ids['originalTXT'].text
 
-    def findBTN(self): pass
+    def findBTN(self):
+        global count
+        text4find = str(self.ids['text4find'].text)
+        text4replace = str(self.ids['text4replace'].text)
+        count = 0
+
+        for st in range(len(self.values)):
+            o = 1 if self.values[st][1] != '' else 0
+            if self.values[st][o].find(text4find) != -1:
+                self.values[st][1] = self.values[st][o].replace(text4find, text4replace)
+                if st == sss: self.upd()
+                count += 1
+
+        mb.showinfo(title = 'Сообщение', message = f'Выполнено {str(count)} замен')
+        print(self.values)
+
+    def upd(self):
+        if str(self.values[sss][1]) == '':
+            self.ids['newTXT'].text = str(self.values[sss][0])
+        else:
+            self.ids['newTXT'].text = str(self.values[sss][1])
+
+    def gotoBTN(self):
+        try:
+            goto = self.ids['gotoInput'].text
+            if int(goto) < len(self.values) + 1: self.nextString(int(goto) - 1)
+            else: mb.showinfo(title = 'Сообщение', message = f'Вы ввели {goto}, а в файле только {len(self.values)} строк!')
+        except (TypeError, ValueError): mb.showinfo(title = 'Сообщение', message = f'Введите число от 1 до {len(self.values)}!')
 
 class NewTranslatorApp(App):
 
