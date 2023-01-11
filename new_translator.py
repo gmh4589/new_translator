@@ -1,4 +1,6 @@
 # -*- coding:utf-8 -*-
+import os
+import random
 
 from kivy.app import App
 from kivy.factory import Factory
@@ -16,8 +18,8 @@ sss = 0
 # Загружает конфиг интерфейса
 Builder.load_file('new_translator.kv')
 
-class MainScreen(Screen):
 
+class MainScreen(Screen):
     values = []
     filename = ''
     sheet = ''
@@ -66,49 +68,81 @@ class MainScreen(Screen):
         for cell in range(len(self.values)):
             o = 1 if self.values[cell][1] != '' else 0
             self.sheet.cell(row = int(self.values[cell][2]),
-                            column = int(self.values[cell][3])).value\
+                            column = int(self.values[cell][3])).value \
                 = self.values[cell][o]
 
         self.readData.save(self.filename)
-        if auto == 0: Factory.SavedPopup().open()
-        else: print('Автосохренение выполнено!')
+        if auto == 0:
+            Factory.SavedPopup().open()
+        else:
+            print('Автосохренение выполнено!')
 
-    def autoSave(self, dt): self.writeFile(1)
+    def autoSave(self, dt):
+        self.writeFile(1)
 
+    def orpho(self):
+        words = self.ids['newTXT'].text.split(' ')
+
+        errors = 0
+        errorsList = []
+
+        for word in words:
+            if not '#' in word or not '_' in word:
+                if not word in NewTranslatorApp.dictionary:
+                    errors += 1
+                    errorsList.append(word)
+
+        if len(errorsList) > 0:
+            mb.showinfo(title = 'Обнаружены ошибки!', message = 'В славах:\n' + str(errorsList) +
+                        '\nИсправьте их!')
+
+        return errors
+
+    # noinspection PyTypeChecker
     def nextString(self, step = '+'):
 
         global sss
 
+        # noinspection PyTypeChecker
         def setString():
             self.values[sss][1] = self.ids['newTXT'].text
             print(self.values[sss][1])
 
-        try:
-            setString()
-            if step == '+': sss += 1
-            elif step == '-':
-                if sss != 0: sss -= 1
-                else: Factory.EOFPopup().open()
-            else: sss = step
+        if self.orpho() == 0:
 
-            o = 1 if self.values[sss][1] != '' else 0
-            self.ids['newTXT'].text = str(self.values[sss][o])
+            try:
+                setString()
+                if step == '+':
+                    sss += 1
+                elif step == '-':
+                    if sss != 0:
+                        sss -= 1
+                    else:
+                        Factory.EOFPopup().open()
+                else:
+                    sss = step
 
-        except IndexError: Factory.EOFPopup().open()
-        print(self.values)
+                o = 1 if self.values[sss][1] != '' else 0
+                self.ids['newTXT'].text = str(self.values[sss][o])
+
+            except IndexError:
+                Factory.EOFPopup().open()
+            print(self.values)
 
     def update(self, dt):
+        global load
         try:
             self.ids['originalTXT'].text = str(self.values[sss][0])
             self.ids['rdyLabel'].text = str(sss + 1) + '/' + str(len(self.values)) + ' готово'
             self.ids['longLabel'].text = str(len(self.values[sss][0])) + ' символов'
             self.ids['percentLabel'].text = str((100 / len(self.values) * sss))[:4] + ' %'
 
-        except IndexError: pass
+        except IndexError:pass
 
     def reFresh(self):
         self.ids['newTXT'].text = self.ids['originalTXT'].text
 
+    # noinspection PyGlobalUndefined
     def findBTN(self):
         global count
         text4find = str(self.ids['text4find'].text)
@@ -126,25 +160,36 @@ class MainScreen(Screen):
         print(self.values)
 
     def upd(self):
-        if str(self.values[sss][1]) == '':
-            self.ids['newTXT'].text = str(self.values[sss][0])
-        else:
-            self.ids['newTXT'].text = str(self.values[sss][1])
+        try:
+            if str(self.values[sss][1]) == '':
+                self.ids['newTXT'].text = str(self.values[sss][0])
+            else:
+                self.ids['newTXT'].text = str(self.values[sss][1])
+        except IndexError:
+            mb.showinfo(title = 'Сообщение', message = f'В выбранном файле нет текста!')
 
     def gotoBTN(self):
         try:
             goto = self.ids['gotoInput'].text
-            if int(goto) < len(self.values) + 1: self.nextString(int(goto) - 1)
-            else: mb.showinfo(title = 'Сообщение', message = f'Вы ввели {goto}, а в файле только {len(self.values)} строк!')
-        except (TypeError, ValueError): mb.showinfo(title = 'Сообщение', message = f'Введите число от 1 до {len(self.values)}!')
+            if int(goto) < len(self.values) + 1:
+                self.nextString(goto - 1)
+            else:
+                mb.showinfo(title = 'Сообщение', message = f'Вы ввели {goto}, а в файле только {len(self.values)} строк!')
+        except (TypeError, ValueError):
+            mb.showinfo(title = 'Сообщение', message = f'Введите число от 1 до {len(self.values)}!')
+
 
 class NewTranslatorApp(App):
+    dicFile = open('./data/dictionary/ru.txt', 'r+', encoding = 'utf-8')
+    dictionary = dicFile.readlines()
+    print(dictionary[random.randint(0, len(dictionary))])
 
     # Создаёт  интерфейс
     def build(self):
         sm = ScreenManager()
-        sm.add_widget(MainScreen(name = 'main'))
+        sm.add_widget(MainScreen(name='main'))
 
         return sm
+
 
 NewTranslatorApp().run()
