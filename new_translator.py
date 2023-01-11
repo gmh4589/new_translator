@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import os
 import random
+import re
 
 from kivy.app import App
 from kivy.factory import Factory
@@ -33,35 +34,38 @@ class MainScreen(Screen):
 
     def fileOpen(self):
 
-        filetypes = (
-            ('Файлы Excel', '*.xlsx'),
-            ('All files', '*.*')
-        )
+        if self.filename == '':
+            filetypes = (
+                ('Файлы Excel', '*.xlsx'),
+                ('All files', '*.*')
+            )
 
-        self.filename = fd.askopenfilename(
-            title = 'Выберите XLSX файл',
-            initialdir = '/',
-            filetypes = filetypes)
+            self.filename = fd.askopenfilename(
+                title = 'Выберите XLSX файл',
+                initialdir = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop') ,
+                filetypes = filetypes)
 
-        print(self.filename)
+            print(self.filename)
 
-        if self.filename != '':
-            self.readData = openpyxl.load_workbook(self.filename, data_only = True)
-            self.sheet = self.readData.active
-            rows = self.sheet.max_row
-            cols = self.sheet.max_column
+            if self.filename != '':
+                self.readData = openpyxl.load_workbook(self.filename, data_only = True)
+                self.sheet = self.readData.active
+                rows = self.sheet.max_row
+                cols = self.sheet.max_column
 
-            for row in range(1, rows):
-                for col in range(1, cols):
-                    cell = self.sheet.cell(row = row, column = col).value
+                for row in range(1, rows):
+                    for col in range(1, cols):
+                        cell = self.sheet.cell(row = row, column = col).value
 
-                    if cell == 'dialog':
-                        val = [self.sheet.cell(row = row + 1, column = col).value, '', row + 1, col]
-                        self.values.append(val)
+                        if cell == 'dialog':
+                            val = [self.sheet.cell(row = row + 1, column = col).value, '', row + 1, col]
+                            self.values.append(val)
 
-            self.upd()
+                self.upd()
 
-            print(self.values)
+                print(self.values)
+
+        else: mb.showinfo(title = 'Сообщение', message = 'Файл уже открыт!')
 
     def writeFile(self, auto = 0):
 
@@ -80,54 +84,32 @@ class MainScreen(Screen):
     def autoSave(self, dt):
         self.writeFile(1)
 
-    def orpho(self):
-        words = self.ids['newTXT'].text.split(' ')
-
-        errors = 0
-        errorsList = []
-
-        for word in words:
-            if not '#' in word or not '_' in word:
-                if not word in NewTranslatorApp.dictionary:
-                    errors += 1
-                    errorsList.append(word)
-
-        if len(errorsList) > 0:
-            mb.showinfo(title = 'Обнаружены ошибки!', message = 'В славах:\n' + str(errorsList) +
-                        '\nИсправьте их!')
-
-        return errors
-
-    # noinspection PyTypeChecker
     def nextString(self, step = '+'):
 
         global sss
 
-        # noinspection PyTypeChecker
         def setString():
             self.values[sss][1] = self.ids['newTXT'].text
             print(self.values[sss][1])
 
-        if self.orpho() == 0:
-
-            try:
-                setString()
-                if step == '+':
-                    sss += 1
-                elif step == '-':
-                    if sss != 0:
-                        sss -= 1
-                    else:
-                        Factory.EOFPopup().open()
+        try:
+            setString()
+            if step == '+':
+                sss += 1
+            elif step == '-':
+                if sss != 0:
+                    sss -= 1
                 else:
-                    sss = step
+                    Factory.EOFPopup().open()
+            else:
+                sss = step
 
-                o = 1 if self.values[sss][1] != '' else 0
-                self.ids['newTXT'].text = str(self.values[sss][o])
+            o = 1 if self.values[sss][1] != '' else 0
+            self.ids['newTXT'].text = str(self.values[sss][o])
 
-            except IndexError:
-                Factory.EOFPopup().open()
-            print(self.values)
+        except IndexError:
+            Factory.EOFPopup().open()
+        print(self.values)
 
     def update(self, dt):
         global load
@@ -182,12 +164,14 @@ class MainScreen(Screen):
 class NewTranslatorApp(App):
     dicFile = open('./data/dictionary/ru.txt', 'r+', encoding = 'utf-8')
     dictionary = dicFile.readlines()
-    print(dictionary[random.randint(0, len(dictionary))])
+    # example = dictionary[random.randint(0, len(dictionary))]
+    # print(example)
+    # mb.showinfo(title = 'Сообщение', message = example)
 
     # Создаёт  интерфейс
     def build(self):
         sm = ScreenManager()
-        sm.add_widget(MainScreen(name='main'))
+        sm.add_widget(MainScreen(name = 'main'))
 
         return sm
 
