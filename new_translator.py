@@ -81,19 +81,24 @@ class MainScreen(Screen):
 
         self.readData.save(self.filename)
         now = datetime.now().strftime('%d.%m.%Y %H-%M-%S')
-        if auto == 0: Factory.SavedPopup().open()
-        else: print(f'{now} - Автосохренение выполнено!')
+        if auto == 0:
+            Factory.SavedPopup().open()
+            self.createBackup(1)
+        else:
+            if autosave != 0: print(f'{now} - Автосохренение выполнено!')
 
-    def autoSave(self, dt):
-        if self.filename != '': self.writeFile(1)
-
-    def backups(self, dt):
-        if self.filename != '':
+    def createBackup(self, time):
+        if time != 0:
             now = datetime.now().strftime('%d.%m.%Y %H-%M-%S')
             name = self.filename.split('/')[-1].split('.')[0]
-            path = os.path.dirname(os.path.realpath(__file__))
             shutil.copyfile(self.filename, f'backups/{name}.{now}.xlsx')
             print(f'{now} - Бекап создан!')
+
+    def autoSave(self, dt):
+        if self.filename != '' and autosave != 0: self.writeFile(1)
+
+    def backups(self, dt):
+        if self.filename != '': self.createBackup(backup)
 
     def nextString(self, step = '+'):
 
